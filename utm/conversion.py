@@ -183,7 +183,7 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
             mathlib.degrees(longitude))
 
 
-def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=None, force_northern=None):
+def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=None, force_northern=None, max_lat = 84, min_lat = -80):
     """This function converts Latitude and Longitude to UTM coordinate
 
         Parameters
@@ -227,8 +227,8 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
 
        .. _[1]: http://www.jaworski.ca/utmzones.htm
     """
-    if not in_bounds(latitude, -80, 84):
-        raise OutOfRangeError('latitude out of range (must be between 80 deg S and 84 deg N)')
+    if not in_bounds(latitude, min_lat, max_lat):
+        raise OutOfRangeError(f'latitude out of range (must be between {min_lat} deg and {max_lat} deg)')
     if not in_bounds(longitude, -180, 180):
         raise OutOfRangeError('longitude out of range (must be between 180 deg W and 180 deg E)')
     if force_zone_letter and force_northern is not None:
@@ -250,7 +250,7 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
         zone_number = force_zone_number
 
     if force_zone_letter is None and force_northern is None:
-        zone_letter = latitude_to_zone_letter(latitude)
+        zone_letter = latitude_to_zone_letter(latitude, max_lat = max_lat, min_lat = min_lat)
     else:
         zone_letter = force_zone_letter
 
@@ -294,13 +294,13 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     return easting, northing, zone_number, zone_letter
 
 
-def latitude_to_zone_letter(latitude):
+def latitude_to_zone_letter(latitude, max_lat = 84, min_lat = -80):
     # If the input is a numpy array, just use the first element
     # User responsibility to make sure that all points are in one zone
     if use_numpy and isinstance(latitude, mathlib.ndarray):
         latitude = latitude.flat[0]
 
-    if -80 <= latitude <= 84:
+    if min_lat <= latitude <= max_lat:
         return ZONE_LETTERS[int(latitude + 80) >> 3]
     else:
         return None
